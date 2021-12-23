@@ -148,4 +148,48 @@ autovalidateModeをonUserInteractionにすると、入力の変更を逐一チ�
 
 ---
 
-# hogehoge
+# TextFormFieldを2つにしてみよう
+複数のField
+
+```dart
+Column(
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: [
+    TextFormField(
+      decoration: const InputDecoration(labelText:'Form1'),
+      validator: (value) {
+        // 省略
+      },
+    ),
+    TextFormField(
+      decoration: const InputDecoration(labelText:'Form2'),
+      validator: (value) {
+        // 省略
+      },
+    ),
+  ],
+),
+
+```
+
+---
+
+# Fieldをまとめて ほげほげ したい
+ってことがあるんですよね
+
+- まとめて一気にバリデーション
+- まとめて一気に入力初期化
+
+そんなケースがよくあります。
+
+
+---
+
+# Demo
+validateとreset
+
+<iframe width="120%" height="500" style="transform:scale(0.8); transform-origin:0 0;" src="https://dartpad.dev/?id=5a123c3fc4832490a00dde626febe23c" />
+
+---
+
+# hoge
