@@ -14,11 +14,24 @@ drawings:
 title: Form Widget Deep Dive
 ---
 
-# フォームを **正しく** 使いこなそう
+# フォームを **正しく** 使おう
 
 ---
 
-# フォーム
+# 自己紹介 - Sugit (すぎっと)
+
+- 趣味でFlutterをやっている人
+- 本業は化学と数学とその研究用のソフトウェア開発 (C++, C#, Reactが多い)
+- Twitter : @sugitlab
+  <img src="/sns.png" className="w-15">
+- 副業でプログラミング教えてます (U30ならなんと無料)
+  <img src="https://techbowl.co.jp/_nuxt/img/5225fd1.svg" className="w-15" >
+- Zennで主に活動中
+  <img src="/poke.png" className="w-40">
+
+---
+
+# 今日のテーマは「フォーム」です
 Form
 
 フォームはほとんどのアプリに登場します。
@@ -167,9 +180,8 @@ Form(
 
 Form Widget の validate()メソッドは、自身の子にあたるすべての<span style="color:orange">FormFieldのvalidatorを実行</span>します。
 
-```dart {1|5|6|7|8|5-8}
-// validate()!!!!
-Form(
+```dart {1|4|5|6|7|4-7}
+Form(  // validate()!!!!
   child: Column(
     children: [
       TextFormField(validator: /* バリデーション処理 */),
@@ -188,6 +200,34 @@ Form は この FormField 全体に対して命令を送ることができるん
 > 公式Doc: An optional container for grouping together multiple form field widgets
 
 </v-click>
+
+---
+
+# 内側の話
+
+- Form Widget は StatefulWidget です。
+
+```dart {all|7}
+class Form extends StatefulWidget {
+// ....
+}
+class FormState extends State<Form> {
+  int _generation = 0;
+  bool _hasInteractedByUser = false;
+  final Set<FormFieldState<dynamic>> _fields = <FormFieldState<dynamic>>{};
+  // ...
+}
+```
+
+<v-click>
+
+_fields に **すべての子の FormFieldState** を保持しています。
+
+だから、すべての子のメソッドを呼び出せるのです。
+
+</v-click>
+
+
 
 ---
 
@@ -328,7 +368,7 @@ validateとreset
 次は save です
 
 save() も同様で、FormField の save() をすべて実行します
-```dart
+```dart {all|4}
 // Form の save() の実装がこちら
   void save() {
     for (final FormFieldState<dynamic> field in _fields)
@@ -367,7 +407,7 @@ TextFormField(
 ),
 ```
 
-Form Widget の save が呼ばれた時、ログに `form1 saved xxxx` と表示されます。
+上の例では Form Widget の save が呼ばれた時、ログに `form1 saved xxxx` と表示されます。
 
 ここに自前で実装する必要があります。
 
@@ -455,7 +495,7 @@ _form1Key.currentState?.value
 
 ---
 
-# Q: これをどうやってつくりましょう
+# Quiz: これをどうやってつくりましょう
 
 入力した値が即座に反映されるようにしたい
 
@@ -560,23 +600,22 @@ class _MyWidgetState extends State<MyWidget> {
 
 ---
 
-# いまの例は...?
-なんやったんや...
+# 一度立ち止まって考えよう
+本当に必要???
+
+
+<br>
+<br>
+<br>
+
 
 先程の例は、入力フォームの値を別のWidgetに対してリアルタイムに反映するという
 
 <h3><span style="color:orange"> かなり特殊なケース</span> を例にしました。</h3> 
 
 <br>
-<br>
-<br>
-<br>
 
-### FormFieldの値が変わったときに、再ビルドしたいWidgetがある
-
-<br>
-
-こういう特殊な場合を除いて、setStateを使うのはやめましょう。
+Formと一緒にsetStateを書きそうになったら、「本当に必要？」と一度立ち止まって考えてみましょう。
 
 ---
 
@@ -606,36 +645,44 @@ Stateが増えると、先程の例のようにWidgetが再ビルドされる可
 
 - 入力値をリアルタイムで欲しい場合 
   - onChangeをつかってください
-- 入力値をリアルタイムで欲しい(入力値のリアルタイムバリデーションがしたい)場合 
+- 入力値をリアルタイムで欲しい(バリデーションがしたい)場合 
   - autovalidateModeを指定してください
 - 入力値をリアルタイムで確認しつつ、Widgetを再ビルドするなどしたい場合
-  - setStateしてください。ビルドが影響するWidgetを最小限にしてください
+  - setStateしてください。しかし、ビルドが影響するWidgetを最小限にしてください
 - 最終結果さえあればいい場合
-  - Keyでアクセスしてください
+  - Keyでアクセスしてください 
   - Formでラップして save() をつかってください。onSave を実装してください。
 
-え・・・ややこしい。
+<v-click>
+
+
+<br>
+<br>
+
+### え・・・ややこしい。 
+
+</v-click>
 
 ---
 
 # TextFormField の <span style="color:orange"> Controller </span> を試してみよう
 
 
-```dart
+```dart {all|2}
 class _MyWidgetState extends State<MyWidget> {
   final form1Controller = TextEditingController();
 
   @override
   void dispose() {
-  form1Controller.dispose();
-  super.dispose();
+    form1Controller.dispose();
+    super.dispose();
   }
   // .... 
 ```
 
 このように定義した controller を TextFormFieldに渡します。
 
-```dart
+```dart {all|2}
 TextFormField(
   controller: form1Controller,
   decoration: const InputDecoration(labelText: 'Form1'),
@@ -647,7 +694,7 @@ TextFormField(
 # TextEditingControllerならいろいろ簡単にできる
 
 - 初期値を与えたい場合
-  - `TextEditingController(initialValue)`でできます
+  - `TextEditingController(text: '初期値')`でできます
     - とはいえ、TextFormFieldのinitialValueで十分。
 - 値が欲しい場合
   - `TextEditingController.text` でとれます
@@ -661,7 +708,7 @@ TextFormField(
 
 <v-click>
 
-<span style="color:orange">なんていうことよりも大切なことがあります。</span>
+<span style="color:orange">便利だけど忘れてはいけないことがあります</span>
 
 </v-click>
 
@@ -671,9 +718,13 @@ TextFormField(
 
 ValueNotiferです
 
-ValueNotifierはChangeNotifierを継承したものです。
+ValueNotifier は ChangeNotifier を継承したものです。
 
 つまり、 <span style="color:orange">変更があった時に通知する仕組み</span> を持っています。
+
+Observe パターンな実装ということです。
+
+Notifier + Listener で構成されます。
 
 通知する先は `addListener()` で登録した VoidCallbackのみです。
 
@@ -681,9 +732,15 @@ ValueNotifierはChangeNotifierを継承したものです。
 
 <v-click>
 
-### setStateじゃないので、再レンダリングが勝手に発生しない!! 
+### 再レンダリングは勝手に発生しません 
 
 </v-click>
+
+---
+
+# 勝手にビルドされないので、先の例は簡単には作れません
+
+<iframe width="150%" height="500" style="transform:scale(0.7); transform-origin:0 0;" src="https://dartpad.dev/?id=497f92532360e1536c63af8d267ca037" /> 
 
 ---
 
@@ -702,3 +759,16 @@ TextEditingController は不要になった時点で <span style="color:orange">
 
 > 公式Doc: Remember to dispose of the TextEditingController when it is no longer needed. This will ensure we discard any resources used by the object.
 
+---
+
+# 最後に
+
+良く見かける実装集
+
+- 不要なsetState
+- TextEditingControllerとsetStateの共用 (要らないのに)
+- TextEditingControllerのdispose忘れ
+- 自作の一括save()ボタン (たぶん Form Widgetを知らない)
+- Flutter公式のFormはクソだからライブラリ使おうぜ教 (公式を否定するならIssueかPR出しなさい)
+  - ライブラリを使う前に基本を理解したほうがいい。本当に。
+  - 基本の方法を理解した上で、Pros/Cons考えてから、ライブラリは使おう。
